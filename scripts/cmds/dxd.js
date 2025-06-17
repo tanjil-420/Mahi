@@ -2,14 +2,14 @@ const axios = require("axios");
 
 module.exports = {
   config: {
-    name: "dxd",
+    name: "overflow",
     version: "3.4",
     author: "Eren",
     countDown: 5,
-    role: 0,
-    shortDescription: "Watch High School DxD",
+    role: 2,
+    shortDescription: "Watch overflow",
     longDescription: "List all episodes and play selected one",
-    category: "anime",
+    category: "18+",
     guide: "{pn} => Show all episodes"
   },
 
@@ -21,7 +21,7 @@ module.exports = {
       if (!episodes || Object.keys(episodes).length === 0)
         return api.sendMessage("❌ No episodes found.", event.threadID);
 
-      let msg = `🎬 High School DxD Episodes:\n\n`;
+      let msg = `🎬 overflow Hentai Episodes:\n\n`;
       const mapEp = [];
 
       Object.keys(episodes).forEach((epKey, i) => {
