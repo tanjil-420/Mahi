@@ -1,92 +1,73 @@
 const os = require("os");
-const pidusage = require("pidusage");
-const fs = require("fs");
 
-const authorUID = "61576212342334";
+const startTime = Date.now();
 
 module.exports = {
   config: {
     name: "uptime",
-    aliases: ["upt", "up2", "upt2", "up"],
-    version: "2.3",
-    author: "Eren",
+    aliases: ['up', 'upt'],
+    version: "1.0",
+    author: "NIROB + Fixed by ChatGPT",
     countDown: 5,
     role: 0,
-    shortDescription: "Show system and bot status",
-    longDescription: "Displays uptime, CPU, memory, disk, and bot stats",
-    category: "info",
+    category: "system",
+    shortDescription: "Show bot uptime & system info",
+    longDescription: "Get current uptime, RAM, CPU and bot info (no media)",
     guide: "{pn}",
-    noPrefix: true
   },
 
-  // Normal prefix handler
-  onStart: async function (ctx) {
-    await module.exports.sendUptime(ctx);
+  onStart: async function ({ api, event, threadsData, usersData }) {
+    try {
+      // 🕒 Uptime calculation
+      const uptimeInMs = Date.now() - startTime;
+      const totalSeconds = Math.floor(uptimeInMs / 1000);
+      const days = Math.floor(totalSeconds / (3600 * 24));
+      const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      const uptime = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+      // 🧠 RAM & CPU
+      const totalMem = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
+      const freeMem = (os.freemem() / 1024 / 1024 / 1024).toFixed(2);
+      const usedMem = (totalMem - freeMem).toFixed(2);
+      const ramUsage = (process.memoryUsage().rss / 1024 / 1024).toFixed(1);
+      const cpuModel = os.cpus()[0]?.model || "Unknown CPU";
+
+      // ⏰ Time & date
+      const now = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
+      // 📡 Ping check
+      const pingStart = Date.now();
+      await api.sendMessage("⏳ Fetching system info...", event.threadID);
+      const ping = Date.now() - pingStart;
+
+      // 👤 Data counts
+      const allUsers = await usersData.getAll();
+      const allThreads = await threadsData.getAll();
+
+      // 📦 Final Output
+      const info = `
+🔧 𝗕𝗢𝗧 𝗦𝗬𝗦𝗧𝗘𝗠 𝗜𝗡𝗙𝗢 🔧
+────────────────────────
+🟢 Uptime: ${uptime}
+📅 Time: ${now}
+📡 Ping: ${ping}ms
+
+💻 CPU: ${cpuModel}
+📂 OS: ${os.type()} ${os.arch()}
+📊 RAM: ${ramUsage} MB used by bot
+💾 Memory: ${usedMem} GB / ${totalMem} GB
+
+👥 Users: ${allUsers.length}
+💬 Threads: ${allThreads.length}
+────────────────────────`;
+
+      await api.sendMessage(info, event.threadID);
+
+    } catch (err) {
+      console.error("❌ up2.js error:", err);
+      return api.sendMessage("⚠️ An error occurred while showing system info.", event.threadID);
+    }
   },
-
-  // noPrefix for author only
-  onChat: async function (ctx) {
-    const input = ctx.event.body?.toLowerCase().trim();
-    const { config } = module.exports;
-    const triggers = [config.name, ...(config.aliases || [])];
-
-    if (!triggers.includes(input)) return;
-    if (ctx.event.senderID !== authorUID) return; // Only you can use noPrefix
-
-    await module.exports.sendUptime(ctx);
-  },
-
-  sendUptime: async function ({ message, usersData, threadsData }) {
-    const now = new Date();
-    const formatDate = now.toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
-
-    const uptimeBot = process.uptime();
-    const uptimeSys = os.uptime();
-    const toTime = (sec) => {
-      const d = Math.floor(sec / 86400);
-      const h = Math.floor((sec % 86400) / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      const s = Math.floor(sec % 60);
-      return `${d ? `${d}d ` : ""}${h}h ${m}m ${s}s`;
-    };
-
-    const usage = await pidusage(process.pid);
-    const totalRam = (os.totalmem() / 1024 / 1024 / 1024).toFixed(0);
-    const freeRam = (os.freemem() / 1024 / 1024 / 1024).toFixed(0);
-    const usedRam = (usage.memory / 1024 / 1024).toFixed(1);
-    const cpuUsage = usage.cpu.toFixed(1);
-    const cpuModel = os.cpus()[0].model;
-    const cpuCores = os.cpus().length;
-    const pkgCount = Object.keys(JSON.parse(fs.readFileSync('package.json')).dependencies || {}).length;
-
-    const users = await usersData.getAll();
-    const threads = await threadsData.getAll();
-
-    const msg =
-`━━━━━━━━━━━━━━━━━
-            𝗕𝗼𝘁 𝗦𝘁𝗮𝘁𝘂𝘀
-📅 𝗗𝗮𝘁𝗲: ${formatDate}
-━━━━━━━━━━━━━━━━━
-
-⏱️ 𝗕𝗼𝘁 𝗨𝗽𝘁𝗶𝗺𝗲 : ${toTime(uptimeBot)}
-🖥️ 𝗦𝘆𝘀 𝗨𝗽𝘁𝗶𝗺𝗲 : ${toTime(uptimeSys)}
-
-🧠 𝗖𝗣𝗨 : ${cpuModel}
-🔧 𝗖𝗼𝗿𝗲𝘀 : ${cpuCores}
-📊 𝗟𝗼𝗮𝗱 : ${cpuUsage}%
-
-💾 𝗥𝗔𝗠 : ${usedRam} MB / ${totalRam} GB
-📂 𝗙𝗿𝗲𝗲 𝗠𝗲𝗺𝗼𝗿𝘆 : ${freeRam} GB
-
-📦 𝗣𝗮𝗰𝗸𝗮𝗴𝗲𝘀 : ${pkgCount}
-👥 𝗨𝘀𝗲𝗿𝘀 : ${users.length}
-👨‍👩‍👧‍👦 𝗚𝗿𝗼𝘂𝗽𝘀 : ${threads.length}
-
-🗂️ 𝗗𝗶𝘀𝗸 𝗨𝘀𝗲𝗱 : 325G / 387G
-📁 𝗔𝘃𝗮𝗶𝗹𝗮𝗯𝗹𝗲 : 63G
-
-━━━━━━━━━━━━━━━━━`;
-
-    message.reply(msg);
-  }
 };
