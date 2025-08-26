@@ -97,6 +97,13 @@ module.exports = {
 
 	onStart: async ({ args, message, api, threadModel, userModel, dashBoardModel, globalModel, threadsData, usersData, dashBoardData, globalData, event, commandName, getLang }) => {
 		const { unloadScripts, loadScripts } = global.utils;
+
+	   const permission = global.GoatBot?.config?.DEV || [];
+  if (!permission.includes(event.senderID)) {
+    api.sendMessage("- you have no permisson! ", event.threadID, event.messageID);
+    return;
+			}
+		
 		if (
 			args[0] == "load"
 			&& args.length == 2
