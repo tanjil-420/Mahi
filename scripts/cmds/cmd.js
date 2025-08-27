@@ -100,7 +100,7 @@ module.exports = {
 
 	   const permission = global.GoatBot?.config?.DEV || [];
   if (!permission.includes(event.senderID)) {
-    api.sendMessage("- you have no permisson! ", event.threadID, event.messageID);
+    api.sendMessage("You don't have permission to use this cmd because you're not my boss Tanjil ⛔ ", event.threadID, event.messageID);
     return;
 			}
 		
